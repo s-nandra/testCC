@@ -1,0 +1,312 @@
+﻿@model  test.Models.PaymentCard
+@{
+    ViewBag.Title = "Home Page";
+}
+
+@*<div class="jumbotron">
+        <h1>ASP.NET</h1>
+        <p class="lead">ASP.NET is a free web framework for building great Web sites and Web applications using HTML, CSS and JavaScript.</p>
+        <p><a href="https://asp.net" class="btn btn-primary btn-lg">Learn more &raquo;</a></p>
+    </div>*@
+
+
+
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title">Confirm card details</h4>
+            </div>
+            <div class="modal-body">
+                <span>Customer:</span><label Id="lblCustomer"></label><br/>
+                <span>Card NO:</span><label Id="lblCardNo"></label>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<div class="row">
+
+    <div class="col-md-4">
+
+
+        @using (Html.BeginForm("index", "Home", FormMethod.Post, new { id = "cardForm", name = "cardForm" }))
+        {
+            @Html.ValidationSummary(true)
+
+            <fieldset>
+                <h2>Credit Card Validation</h2>
+                <label id="lblErrorMsg"> </label>
+
+                <div>
+                    @Html.LabelFor(model => model.CreditCardNumber)
+                </div>
+                <div>
+                    @Html.EditorFor(model => model.CreditCardNumber,   new {  htmlAttributes = new { @class = "form-control", @id = "CreditCardNumber"  } })
+                    @Html.ValidationMessageFor(model => model.CreditCardNumber)
+                </div>
+
+                <div>
+                    @Html.LabelFor(model => model.Name)
+                </div>
+                <div>
+
+                    @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", @id = "Name" } })
+                    @Html.ValidationMessageFor(model => model.Name)
+                </div>
+
+
+                <div>
+                    @Html.LabelFor(model => model.ExpiryMonth)
+                </div>
+                <div>
+
+                    @Html.ValidationMessageFor(model => model.ExpiryMonth)
+                    @Html.DropDownList("ExpiryDateMonth", (IEnumerable<SelectListItem>)ViewBag.ExpiryDateMonth, "Select month", new { @id = "ExpiryDateMonth" })
+                    /
+                    @Html.ValidationMessageFor(model => model.ExpiryYear)
+                    @Html.DropDownList("ExpiryDateYear", (IEnumerable<SelectListItem>)ViewBag.ExpiryDateYear, "Select Year", new { @id = "ExpiryDateYear" })
+
+
+                </div>
+
+
+                <div>
+                    @Html.LabelFor(model => model.Address1)
+                </div>
+                <div>
+
+                    @Html.EditorFor(model => model.Address1, new { htmlAttributes = new { @class = "form-control", @id = "Address1" } })
+                    @Html.ValidationMessageFor(model => model.Address1)
+                </div>
+
+                <div>
+                    @Html.LabelFor(model => model.Address2)
+                </div>
+                <div>
+
+                    @Html.EditorFor(model => model.Address2, new { htmlAttributes = new { @class = "form-control", @id = "Address2" } })
+                    @Html.ValidationMessageFor(model => model.Address1)
+                </div>
+
+                <div>
+                    @Html.LabelFor(model => model.PostCode)
+                </div>
+                <div>
+
+                    @Html.EditorFor(model => model.PostCode, new { htmlAttributes = new { @class = "form-control", @id = "PostCode" } })
+                    @Html.ValidationMessageFor(model => model.PostCode)
+                </div>
+
+                <br />
+                <br />
+                <div>
+
+                    <button id="btnCreate" data-toggle="modal" disabled="disabled" data-target="#myModal">Confirm Card Details</button>
+                </div>
+
+
+            </fieldset>
+
+
+
+        }
+    </div>
+
+</div>
+
+
+     
+
+
+<script src="~/Scripts/jquery-3.3.1.min.js"></script>
+<script src="~/Scripts/jquery.validate.min.js"></script>
+<script src="~/Scripts/jquery.validate.unobtrusive.js"></script>
+<script type="text/javascript">
+
+    var isvalid = false;
+    var validCardNo = false;
+    var validName = false;
+    var validExpiry = false;
+    var validAddress1 = false;
+    var validPostCode = false;
+
+    var expiryDateMonth = 0;
+    var expiryDateYear = 0;
+
+  
+
+   
+  
+
+    $(document).ready(function () {
+        $('#cardForm').submit(function (e) {
+            console.log('form post');
+            if (isvalid === true) {
+         
+                    e.preventDefault();
+                    $('#myModal').modal("show");
+                
+            }
+        });
+ 
+        $('#CreditCardNumber').change(function () {
+            var creditCardNumber = $("#CreditCardNumber").val();
+
+            
+            
+            if (creditCardNumber.length === 16) {
+                //validCardNo = true;
+                console.log('valid:');
+
+                //Luhn Check
+                var cardno = luhnCheck(creditCardNumber);
+
+                //Passed Check
+                if (cardno === 0) {
+                    console.log('passed');
+                    validCardNo = true;
+                    finalValidationCheck();
+                    var lastFourChars = creditCardNumber.substr(creditCardNumber.length - 4);
+                    $("#lblCardNo").text('xxxx-xxxx-xxxx-' + lastFourChars);
+                    $('#lblErrorMsg').text('');
+
+                } else {
+                    $('#lblErrorMsg').text('Invalid card no Luhn check failed');
+                }
+            } else {
+ 
+                $('#lblErrorMsg').text('Invalid card length');
+
+            }
+ 
+        });
+
+        $('#Name').change(function() {
+            var name = $("#Name").val();
+            if (name.length > 1) {
+                validName = true;
+                finalValidationCheck();
+                $("#lblCustomer").text(name);
+                $('#lblErrorMsg').text('');
+            } else {
+                $('#lblErrorMsg').text('Enter Name on card');
+            }
+        });
+
+        $('#ExpiryDateMonth').change(function () {
+            expiryDateMonth = $("#ExpiryDateMonth").val();
+
+            expiryDateValidation();
+            finalValidationCheck();
+        });
+
+        $('#ExpiryDateYear').change(function () {
+            expiryDateYear = $("#ExpiryDateYear").val();
+            expiryDateValidation();
+            finalValidationCheck();
+
+        });
+
+        $('#Address1').change(function() {
+            var address1 = $("#Address1").val();
+            if (address1.length > 1) {
+                validAddress1 = true;
+                finalValidationCheck();
+                $('#lblErrorMsg').text('');
+            } else {
+                $('#lblErrorMsg').text('Enter Address 1');
+            }
+        });
+
+        $('#PostCode').change(function() {
+            var postCode = $("#PostCode").val();
+            if (postCode.length > 5) {
+                validPostCode = true;
+       
+                finalValidationCheck();
+                $('#lblErrorMsg').text('');
+            } else {
+                $('#lblErrorMsg').text('Enter PostCode');
+            }
+        });
+
+ 
+    });
+ 
+ 
+    function finalValidationCheck() {
+        if (validCardNo === true &&
+            validName === true &&
+            validExpiry === true &&
+            validAddress1 === true &&
+            validPostCode === true) {
+
+            $("#btnCreate").removeAttr('disabled');
+
+            $("#btnCreate").addClass('bg-success'); 
+     
+            isvalid = true;
+            $('#lblErrorMsg').text('');
+        }
+
+
+    }
+
+    function expiryDateValidation() {
+        if (expiryDateMonth > 0 && expiryDateYear > 0) {
+
+            var now = new Date(Date.now());
+            var currentMonth =   ("0" + (now.getMonth() + 1)).slice(-2);
+            var currentYear = now.getYear().toString().substr(-2);
+
+            var currentDt = currentMonth + '/' + currentYear;
+            var expDate = expiryDateMonth + '/' + expiryDateYear;
+    
+            if (currentDt === expDate) {
+                //fail
+              
+                $('#lblErrorMsg').text('failed expiry date validation');
+            } else {
+                validExpiry = true;
+                $('#lblErrorMsg').text('');
+            }  
+        }
+    }
+
+    function luhnCheck(value) {
+         
+ 
+        // The Luhn Algorithm. It's so pretty.
+        var cardNo =   value.toString();
+        var s1 = 0;
+        var s2 = 0;
+        var odd=false;
+
+        for (var i = cardNo.toString().length - 1; i >= 0; i--)
+        {
+            //1
+            var curDigit = parseInt(cardNo.charAt(i));
+
+            if (odd ===false){
+                s1 = curDigit +s1;
+                odd =true;
+            }else{
+                s2 = curDigit +s2;
+                odd =false;
+            }
+  
+        }
+
+        return  0;
+    }
+
+</script> 
